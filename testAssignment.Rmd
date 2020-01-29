@@ -1,7 +1,7 @@
 ---
 title: "Test statistical assignment"
-author: "Alexey Bessudnov"
-date: "22 January 2020"
+author: "jjm230"
+date: "27th January 2020"
 output: github_document
 ---
 
@@ -25,7 +25,8 @@ First, we need to read the data into R. For this assignment, I ask you to use da
 ```{r}
 library(tidyverse)
 # This attaches the tidyverse package. If you get an error here you need to install the package first. 
-Data <- read_tsv("")
+Data <- read_tsv("~/Documents/Exeter/Q-Step/POL2094 Data Analysis in Social Science III/Data III Project/Data III Project/data/UKDA-6614-tab/tab/ukhls_w9/i_youth.tab")
+View(Data) ## I note that this .tab file is not too large compared to others within W9 and viewing the organisation of the file might be helpful in understanding certain aspects of the data.
 # You need to add between the quotation marks a full path to the required file on your computer.
 ```
 
@@ -37,7 +38,9 @@ Tabulate three variables: children's gender, age (please use derived variables) 
 
 ```{r}
 # add your code here
-
+## Relevant variables: i_ypsex; i_age_dv; i_ypsocweb
+table(Data$i_ypsex, Data$i_age_dv, Data$i_ypsocweb)             ## Tabulate the variables by ownership of social media account
+addmargins(table(Data$i_ypsex, Data$i_age_dv, Data$i_ypsocweb)) ## Add totals
 ```
 
 ## Recode variables (10 points)
@@ -46,6 +49,9 @@ We want to create a new binary variable for having an account on social media so
 
 ```{r}
 # add your code here
+Data$recode.i_ypsocweb <- ifelse(Data$i_ypsocweb == 1, 1,                     # Recode social media account ownership
+                                 ifelse(Data$i_ypsocweb == 2, 0, NA))
+Data$recode.i_ypsex <- as.factor(ifelse(Data$i_ypsex == 1, "male", "female")) # Recode sex
 ```
 
 ## Calculate means (10 points)
@@ -54,11 +60,14 @@ Produce code that calculates probabilities of having an account on social media 
 
 ```{r}
 # add your code here
+with(Data, tapply(recode.i_ypsocweb, list(i_age_dv, recode.i_ypsex), mean, na.rm = TRUE))
 ```
 
 ## Write short interpretation (10 points)
 
 Write two or three sentences interpreting your findings above.
+
+A: It appears that almost half of all children in the UK begin creating social media accounts from the age of 10, with a majority of both boys and girls owning at least one account from age 11. Girls usually create their first social media account before boys, but this disparity equalises by the time the children become teenagers. However, a slight gap re-emerges at the age of 14-15, when boys' ownership rates flatten while girls' continue increasing. Finally, 100% of teenagers aged 16 or older indicated that they owned at least one social media account, though the sample size for this group is too small from which to draw meaningful conclusions. 
 
 ## Visualise results (20 points)
 
@@ -66,6 +75,34 @@ Create a statistical graph (only one, but it can be faceted) illustrating your r
 
 ```{r}
 # add your code here
+gg1 <- Data[, c(14:15,177,218)]
+gg1$prop <- ifelse(gg1$i_ypsex==1 & gg1$i_age_dv==9, 0, # Brute force assignment because I could not figure out a smarter, faster way to achieve the same result.
+                   ifelse(gg1$i_ypsex==2 & gg1$i_age_dv==9, 0,
+                          ifelse(gg1$i_ypsex==1 & gg1$i_age_dv==16, 1,
+                          ifelse(gg1$i_ypsex==2 & gg1$i_age_dv==16, 1,
+                          ifelse(gg1$i_ypsex==1 & gg1$i_age_dv==10, 0.4415584, 
+                          ifelse(gg1$i_ypsex==2 & gg1$i_age_dv==10, 0.5330396,
+                          ifelse(gg1$i_ypsex==1 & gg1$i_age_dv==11, 0.6317992,
+                          ifelse(gg1$i_ypsex==2 & gg1$i_age_dv==11, 0.7617188,
+                          ifelse(gg1$i_ypsex==1 & gg1$i_age_dv==12, 0.8559671,
+                          ifelse(gg1$i_ypsex==2 & gg1$i_age_dv==12, 0.8761468,
+                          ifelse(gg1$i_ypsex==1 & gg1$i_age_dv==13, 0.8920188, 
+                          ifelse(gg1$i_ypsex==2 & gg1$i_age_dv==13, 0.9352227,
+                          ifelse(gg1$i_ypsex==1 & gg1$i_age_dv==14, 0.9365079,
+                          ifelse(gg1$i_ypsex==2 & gg1$i_age_dv==14, 0.9578059,
+                          ifelse(gg1$i_ypsex==1 & gg1$i_age_dv==15, 0.9315068, 0.9860465))))))))))))))) 
+gg1.1 <- subset(gg1, subset = recode.i_ypsex=="male") # Subset by sex in preparation for generating graph
+gg1.1$Male <- gg1.1$prop                              # Column title must be the desired legend label for ggplot2
+gg1.2 <- subset(gg1, subset = recode.i_ypsex=="female")
+gg1.2$Female <- gg1.2$prop
+ggplot(gg1, aes(x=i_age_dv)) +
+  geom_line(data = gg1.2, aes(y=Female, color = "Female")) +
+  geom_line(data = gg1.1, aes(y=Male, color = "Male")) +
+  scale_color_manual(values = c('Female' = 'red',
+                                'Male' = 'darkblue')) +
+  ggtitle("Proportion of children who have at least one social media account, by age and sex") +
+  labs(x="Age", y="Proportion", color="Sex")
+
 ```
 
 ## Conclusion
